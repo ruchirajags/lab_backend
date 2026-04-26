@@ -32,7 +32,7 @@ const prisma = new PrismaClient();
 // Body: { title, description, equipment, priority }
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
-    const { title, description, equipment, priority = 'medium', labRoom } = req.body;
+    const { title, description, equipment, priority = 'medium', labRoom, component } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!title || !description || !equipment) {
@@ -44,6 +44,7 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
         title, description, equipment,
         priority, status: 'open',
         labRoom: labRoom || null,
+        component: component || null,
         imageUrl,
         studentId: req.user.id,
       },
@@ -89,6 +90,40 @@ router.get("/", protect, requireRole("authority"), async (req, res) => {
     } catch (err) {
         console.error("Get all issues error:", err);
         res.status(500).json({ message: "Server error fetching issues." });
+    }
+});
+
+// ── PUT /api/issues/:id ──────────────────────────────────────────────────────
+// Student: update their own issue
+// Body: { title, description, priority, equipment, component, labRoom }
+router.put('/:id', protect, async (req, res) => {
+    try {
+        const { title, description, priority, equipment, component, labRoom } = req.body;
+        const id = parseInt(req.params.id);
+
+        const issue = await prisma.issue.findUnique({ where: { id } });
+        if (!issue) return res.status(404).json({ message: "Issue not found." });
+
+        // Students can only edit their own issues
+        if (req.user.role === 'student' && issue.studentId !== req.user.id) {
+            return res.status(403).json({ message: "Access denied." });
+        }
+
+        const updated = await prisma.issue.update({
+            where: { id },
+            data: {
+                title: title !== undefined ? title : issue.title,
+                description: description !== undefined ? description : issue.description,
+                priority: priority !== undefined ? priority : issue.priority,
+                equipment: equipment !== undefined ? equipment : issue.equipment,
+                component: component !== undefined ? component : issue.component,
+                labRoom: labRoom !== undefined ? labRoom : issue.labRoom,
+            }
+        });
+        res.json(updated);
+    } catch (err) {
+        console.error("Update issue error:", err);
+        res.status(500).json({ message: "Server error updating issue." });
     }
 });
 

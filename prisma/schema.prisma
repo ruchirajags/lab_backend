@@ -27,6 +27,7 @@ model Issue {
   equipment   String
   priority    String   @default("medium")
   labRoom     String?
+  component   String?
   imageUrl    String?
   status      String   @default("open")
   student     User     @relation(fields: [studentId], references: [id])
