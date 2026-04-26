@@ -47,7 +47,7 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
         imageUrl,
         studentId: req.user.id,
       },
-      include: { student: { select: { id: true, name: true, email: true } } }
+      include: { student: true }
     });
     res.status(201).json(issue);
   } catch (err) {
@@ -82,7 +82,7 @@ router.get("/", protect, requireRole("authority"), async (req, res) => {
         const issues = await prisma.issue.findMany({
             where: status ? { status } : undefined,
             orderBy: { createdAt: "desc" },
-            include: { student: { select: { id: true, name: true, email: true } } },
+            include: { student: true },
         });
 
         res.json(issues);
@@ -99,7 +99,7 @@ router.get("/:id", protect, async (req, res) => {
     try {
         const issue = await prisma.issue.findUnique({
             where: { id: parseInt(req.params.id) },
-            include: { student: { select: { id: true, name: true, email: true } } },
+            include: { student: true },
         });
 
         if (!issue) return res.status(404).json({ message: "Issue not found." });
@@ -134,7 +134,7 @@ router.patch("/:id/status", protect, requireRole("authority"), async (req, res) 
         const updated = await prisma.issue.update({
             where: { id: parseInt(req.params.id) },
             data: { status },
-            include: { student: { select: { id: true, name: true, email: true } } },
+            include: { student: true },
         });
 
         res.json(updated);
