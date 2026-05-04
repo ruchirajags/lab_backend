@@ -1,17 +1,24 @@
 const router = require("express").Router();
 const { PrismaClient } = require("@prisma/client");
 const { protect, requireRole } = require("../middleware/auth");
+const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'labos-issues',
+    folder: 'labos',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
   },
 });
+
 const upload = multer({ storage });
 
 const prisma = new PrismaClient();
@@ -22,7 +29,7 @@ const prisma = new PrismaClient();
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const { title, description, equipment, priority = 'medium', labRoom, component } = req.body;
-    const imageUrl = req.file ? req.file.path : null;
+    const imageUrl = req.file.path;
 
     if (!title || !description || !equipment) {
       return res.status(400).json({ message: 'title, description, and equipment are required.' });
