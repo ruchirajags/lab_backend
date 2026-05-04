@@ -1,29 +1,18 @@
 const router = require("express").Router();
 const { PrismaClient } = require("@prisma/client");
 const { protect, requireRole } = require("../middleware/auth");
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'uploads/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'labos-issues',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
   },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
 });
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Images only'));
-  }
-});
+const upload = multer({ storage });
 
 const prisma = new PrismaClient();
 
@@ -33,7 +22,7 @@ const prisma = new PrismaClient();
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const { title, description, equipment, priority = 'medium', labRoom, component } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.file ? req.file.path : null;
 
     if (!title || !description || !equipment) {
       return res.status(400).json({ message: 'title, description, and equipment are required.' });
