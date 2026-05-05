@@ -93,34 +93,16 @@ router.get("/", protect, requireRole("authority"), async (req, res) => {
 // Student: update their own issue
 // Body: { title, description, priority, equipment, component, labRoom }
 router.put('/:id', protect, async (req, res) => {
-    try {
-        const { title, description, priority, equipment, component, labRoom } = req.body;
-        const id = parseInt(req.params.id);
-
-        const issue = await prisma.issue.findUnique({ where: { id } });
-        if (!issue) return res.status(404).json({ message: "Issue not found." });
-
-        // Students can only edit their own issues
-        if (req.user.role === 'student' && issue.studentId !== req.user.id) {
-            return res.status(403).json({ message: "Access denied." });
-        }
-
-        const updated = await prisma.issue.update({
-            where: { id },
-            data: {
-                title: title !== undefined ? title : issue.title,
-                description: description !== undefined ? description : issue.description,
-                priority: priority !== undefined ? priority : issue.priority,
-                equipment: equipment !== undefined ? equipment : issue.equipment,
-                component: component !== undefined ? component : issue.component,
-                labRoom: labRoom !== undefined ? labRoom : issue.labRoom,
-            }
-        });
-        res.json(updated);
-    } catch (err) {
-        console.error("Update issue error:", err);
-        res.status(500).json({ message: "Server error updating issue." });
-    }
+  try {
+    const { title, description, priority, equipment, component, labRoom } = req.body;
+    const issue = await prisma.issue.update({
+      where: { id: parseInt(req.params.id) },
+      data: { title, description, priority, equipment, component, labRoom }
+    });
+    res.json(issue);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update issue' });
+  }
 });
 
 // ── GET /api/issues/:id ──────────────────────────────────────────────────────
@@ -177,17 +159,15 @@ router.patch("/:id/status", protect, requireRole("authority"), async (req, res) 
 
 // ── DELETE /api/issues/:id ───────────────────────────────────────────────────
 // Authority only: delete an issue
-router.delete("/:id", protect, requireRole("authority"), async (req, res) => {
-    try {
-        const issue = await prisma.issue.findUnique({ where: { id: parseInt(req.params.id) } });
-        if (!issue) return res.status(404).json({ message: "Issue not found." });
-
-        await prisma.issue.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "Issue deleted." });
-    } catch (err) {
-        console.error("Delete issue error:", err);
-        res.status(500).json({ message: "Server error deleting issue." });
-    }
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    await prisma.issue.delete({
+      where: { id: parseInt(req.params.id) }
+    });
+    res.json({ message: 'Issue deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete issue' });
+  }
 });
 
 module.exports = router;
