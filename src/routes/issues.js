@@ -29,7 +29,7 @@ const prisma = new PrismaClient();
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const { title, description, equipment, priority = 'medium', labRoom, component } = req.body;
-    const imageUrl = req.file.path;
+    const imageUrl = req.file ? req.file.path : null;
 
     if (!title || !description || !equipment) {
       return res.status(400).json({ message: 'title, description, and equipment are required.' });
