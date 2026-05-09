@@ -73,6 +73,20 @@ router.patch('/:id/condition', auth, async (req, res) => {
   }
 });
 
+// PUT update item quantity
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const item = await prisma.inventory.update({
+      where: { id: parseInt(req.params.id) },
+      data: { quantity: parseInt(quantity) }
+    });
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update stock' });
+  }
+});
+
 // DELETE item
 router.delete('/:id', auth, async (req, res) => {
   try {
